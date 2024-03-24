@@ -1,0 +1,39 @@
+package com.gongsik.gsr.entity;
+
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import lombok.ToString;
+
+@Entity
+@AllArgsConstructor
+@NoArgsConstructor
+@ToString
+@Data	
+@Table(name = "GS_SEED_INF")
+public class SeedEntity {
+
+	@Column(name = "SEED_NM")
+    private String seedNm;
+	
+	@Id
+	@Column(name = "SEED_NO")
+    private String seedNo;
+
+    @Column(name = "SEED_TEXT")
+    private String seedText;
+
+    @Column(name = "SEED_URL")
+    private String seedUrl;
+    
+    @Column(name = "SEED_SALES_CNT")
+    private int seedSalesCnt;
+ 
+    @Column(name = "SEED_PRICE")
+    private int seedPrice;
+}

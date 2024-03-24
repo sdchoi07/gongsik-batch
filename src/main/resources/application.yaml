@@ -1,0 +1,19 @@
+spring:
+  batch:
+    job:
+      name: ${job.name:NONE}
+      enabled: true
+  profiles: 
+    active: local
+  main:
+    allow-bean-definition-overriding: true
+logging:
+   level:
+     com:
+     gongsik:
+     gsw: INFO
+     org:
+decorator:
+  datasource:
+    p6spy:
+      enable-logging: true
