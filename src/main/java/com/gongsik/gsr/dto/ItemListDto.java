@@ -9,12 +9,12 @@ import lombok.ToString;
 @ToString
 public class ItemListDto implements Serializable{
 	
-	private String invenLclsNo;
-	private String invenMclsNo;
-	private String invenSclsNo;
-	private String invenLclsNm;
-	private String invenMclsNm;
-	private String invenSclsNm;
+	private String invenLClsNo;
+	private String invenMClsNo;
+	private String invenSClsNo;
+	private String invenLClsNm;
+	private String invenMClsNm;
+	private String invenSClsNm;
 	private int invenCnt;
 	private String invenPrice;
 }

@@ -7,6 +7,7 @@ import javax.sql.DataSource;
 import org.springframework.batch.core.Job;
 import org.springframework.batch.core.Step;
 import org.springframework.batch.core.configuration.annotation.JobScope;
+import org.springframework.batch.core.configuration.annotation.StepScope;
 import org.springframework.batch.core.job.builder.JobBuilder;
 import org.springframework.batch.core.launch.support.RunIdIncrementer;
 import org.springframework.batch.core.repository.JobRepository;
@@ -17,6 +18,7 @@ import org.springframework.batch.item.file.mapping.BeanWrapperFieldSetMapper;
 import org.springframework.batch.item.file.mapping.DefaultLineMapper;
 import org.springframework.batch.item.file.transform.DelimitedLineTokenizer;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.FileSystemResource;
@@ -58,7 +60,13 @@ public class ItemManageJob {
 	private final PlatformTransactionManager platformTransactionManager;
 
 	private final String filePath = "C:/batch/"; // 원하는 파일의 경로
-
+	
+//	@Value("#{jobParameters['date']}") 
+//	String date;
+//
+//	@Value("#{jobParameters['fileNm']}") 
+//	String fileNm;
+	
 	@Bean(name = "itemListManageJob")
 	public Job itemListManageJob() {
 		return new JobBuilder("itemListManageJob", jobRepository).incrementer(new RunIdIncrementer())
@@ -69,91 +77,92 @@ public class ItemManageJob {
 	@JobScope
 	public Step itemListManageStep() {
 		return new StepBuilder("itemListManageStep", jobRepository)
-				.<ItemListDto, ItemListDto>chunk(100, platformTransactionManager).reader(itemReader())
+				.<ItemListDto, ItemListDto>chunk(100, platformTransactionManager).reader(itemReader(null,null))
 				.writer(itemWriters()).build();
 //			      .tasklet(fileReadingTasklet(), platformTransactionManager).build();
 	}
 
 	@Bean
+	@StepScope
 	public ItemWriter<ItemListDto> itemWriters() {
 		return items -> {
 			for (ItemListDto item : items) {
-				String gubun1 = item.getInvenLclsNo();
-				String gubun2 = item.getInvenMclsNo();
-				String gubun3 = item.getInvenSclsNo();
+				String gubun1 = item.getInvenLClsNo();
+				String gubun2 = item.getInvenMClsNo();
+				String gubun3 = item.getInvenSClsNo();
 //				log.info("itemList : {}", item);
 				//재고
 				Optional<InventoryEntity> inventoryEntity = inventoryRepository.findByInvenLClsNoAndInvenMClsNoAndInvenSClsNo(gubun1,gubun2,gubun3);
 				if(inventoryEntity.isPresent()) {
 					InventoryEntity inventory = inventoryEntity.get();
-					inventory.setInvenLClsNm(item.getInvenLclsNm());
-					inventory.setInvenMClsNm(item.getInvenMclsNm());
-					inventory.setInvenSClsNm(item.getInvenSclsNm());
+					inventory.setInvenLClsNm(item.getInvenLClsNm());
+					inventory.setInvenMClsNm(item.getInvenMClsNm());
+					inventory.setInvenSClsNm(item.getInvenSClsNm());
 					inventory.setInvenCnt(item.getInvenCnt());
 					inventoryRepository.save(inventory);
 				}else {
 					InventoryEntity inventory = new InventoryEntity();
-					inventory.setInvenLClsNm(item.getInvenLclsNm());
-					inventory.setInvenMClsNm(item.getInvenMclsNm());
-					inventory.setInvenSClsNm(item.getInvenSclsNm());
-					inventory.setInvenLClsNo(item.getInvenLclsNo());
-					inventory.setInvenMClsNo(item.getInvenMclsNo());
-					inventory.setInvenSClsNo(item.getInvenSclsNo());
+					inventory.setInvenLClsNm(item.getInvenLClsNm());
+					inventory.setInvenMClsNm(item.getInvenMClsNm());
+					inventory.setInvenSClsNm(item.getInvenSClsNm());
+					inventory.setInvenLClsNo(item.getInvenLClsNo());
+					inventory.setInvenMClsNo(item.getInvenMClsNo());
+					inventory.setInvenSClsNo(item.getInvenSClsNo());
 					inventory.setInvenCnt(item.getInvenCnt());
 					inventoryRepository.save(inventory);
 					
 				}
 				
 				//상풍
-				if (item.getInvenLclsNo().startsWith("1")) { // 상품
+				if (item.getInvenLClsNo().startsWith("1")) { // 상품
 					Optional<ProductEntity> productEntity = productRepository.findByProductNo(gubun3);
 					if (productEntity.isPresent()) {
 						// ItemListDto에서 필요한 정보를 Product로 매핑
 						ProductEntity product = productEntity.get();
-						product.setProductNm(item.getInvenSclsNm());
+						product.setProductNm(item.getInvenSClsNm());
 						int price = Integer.parseInt(item.getInvenPrice().replaceAll(",", ""));
 						product.setProductPrice(price);
 						productRepository.save(product); // Spring Data JPA를 통해 엔티티를 저장
 					} else {
 						ProductEntity product = new ProductEntity();
-						product.setProductNm(item.getInvenSclsNm());
-						product.setProductNo(item.getInvenSclsNo());
+						product.setProductNm(item.getInvenSClsNm());
+						product.setProductNo(item.getInvenSClsNo());
 						int price = Integer.parseInt(item.getInvenPrice().replaceAll(",", ""));
 						product.setProductPrice(price);
 						productRepository.save(product); // Spring Data JPA를 통해 엔티티를 저장
 					}
-				} else if (item.getInvenLclsNo().startsWith("2")) { // 씨앗
+				} else if (item.getInvenLClsNo().startsWith("2")) { // 씨앗
 					Optional<SeedEntity> seedEntity = seedRepository.findBySeedNo(gubun3);
 					if (seedEntity.isPresent()) {
 						SeedEntity seed = seedEntity.get();
 						// ItemListDto에서 필요한 정보를 Seed로 매핑
-						seed.setSeedNm(item.getInvenMclsNm());
+						seed.setSeedNm(item.getInvenMClsNm());
 						int price = Integer.parseInt(item.getInvenPrice().replaceAll(",", ""));
 						seed.setSeedPrice(price);
 						seedRepository.save(seed); // Spring Data JPA를 통해 엔티티를 저장
 					} else {
 						SeedEntity seed = new SeedEntity();
 						// ItemListDto에서 필요한 정보를 Seed로 매핑
-						seed.setSeedNm(item.getInvenMclsNm());
-						seed.setSeedNo(item.getInvenSclsNo());
+						seed.setSeedNm(item.getInvenMClsNm());
+						seed.setSeedNo(item.getInvenSClsNo());
 						int price = Integer.parseInt(item.getInvenPrice().replaceAll(",", ""));
 						seed.setSeedPrice(price);
 						seedRepository.save(seed); // Spring Data JPA를 통해 엔티티를 저장
 					}
-				} else if (item.getInvenLclsNo().startsWith("3")) { // 약품
+				} else if (item.getInvenLClsNo().startsWith("3")) { // 약품
 					Optional<ChemistryEntity> chemistryEntity = chemistryRepository.findByChemistryNo(gubun3);
 					if (chemistryEntity.isPresent()) {
 						ChemistryEntity chemistry = chemistryEntity.get();
 						// ItemListDto에서 필요한 정보를 Chemistry로 매핑
-						chemistry.setChemistryNm(item.getInvenMclsNm());
+						chemistry.setChemistryNm(item.getInvenMClsNm());
 						int price = Integer.parseInt(item.getInvenPrice().replaceAll(",", ""));
 						chemistry.setChemistryPrice(price);
 						chemistryRepository.save(chemistry); // Spring Data JPA를 통해 엔티티를 저장
 					}else {
 						ChemistryEntity chemistry = new ChemistryEntity();
 						// ItemListDto에서 필요한 정보를 Chemistry로 매핑
-						chemistry.setChemistryNm(item.getInvenMclsNm());
-						chemistry.setChemistryNo(item.getInvenSclsNo());
+						chemistry.setChemistryNm(item.getInvenMClsNm());
+						chemistry.setChemistryNo(item.getInvenSClsNo());
 						int price = Integer.parseInt(item.getInvenPrice().replaceAll(",", ""));
 						chemistry.setChemistryPrice(price);
 						chemistryRepository.save(chemistry); // Spring Data JPA를 통해 엔티티를 저장
@@ -162,11 +171,16 @@ public class ItemManageJob {
 			}
 		};
 	}
-
-	public FlatFileItemReader<ItemListDto> itemReader() {
+	
+	@Bean
+	@StepScope
+	public FlatFileItemReader<ItemListDto> itemReader(@Value("#{jobParameters['fileNm']}") String fileNm,@Value("#{jobParameters['date']}") 
+	String date) {
+		
+		
 //		JobParameters parameters = chunkContext.getStepContext().getStepExecution().getJobParameters();
-		String fileNm = "itemList";
-		String date = "20240320";
+//		String fileNm = "itemList";
+//		String date = "20240320";
 
 		FlatFileItemReader<ItemListDto> flatFileItemReader = new FlatFileItemReader<>();
 		flatFileItemReader.setResource(new FileSystemResource(filePath + fileNm + "_" + date + ".csv"));
@@ -178,8 +192,8 @@ public class ItemManageJob {
 
 		/* delimitedLineTokenizer : csv 파일에서 구분자 지정하고 구분한 데이터 setNames를 통해 각 이름 설정 */
 		DelimitedLineTokenizer delimitedLineTokenizer = new DelimitedLineTokenizer(","); // csv 파일에서 구분자
-		delimitedLineTokenizer.setNames("invenLclsNo", "invenMclsNo", "invenSclsNo", "invenLclsNm", "invenMclsNm",
-				"invenSclsNm", "invenCnt", "invenPrice"); // 행으로 읽은 데이터 매칭할 데이터 각 이름
+		delimitedLineTokenizer.setNames("invenLClsNo", "invenMClsNo", "invenSClsNo", "invenLClsNm", "invenMClsNm",
+				"invenSClsNm", "invenCnt", "invenPrice"); // 행으로 읽은 데이터 매칭할 데이터 각 이름
 		defaultLineMapper.setLineTokenizer(delimitedLineTokenizer); // lineTokenizer 설정
 
 		/* beanWrapperFieldSetMapper: 매칭할 class 타입 지정 */
@@ -191,7 +205,7 @@ public class ItemManageJob {
 		flatFileItemReader.setLineMapper(defaultLineMapper); // lineMapper 지정
 		return flatFileItemReader;
 	}
-//    // ItemReader
+    // ItemReader
 //    public Tasklet fileReadingTasklet() {
 //        return (contribution, chunkContext) -> {
 //        	log.info(">>>>> This is Step1");
@@ -211,7 +225,7 @@ public class ItemManageJob {
 //
 //                /* delimitedLineTokenizer : csv 파일에서 구분자 지정하고 구분한 데이터 setNames를 통해 각 이름 설정 */
 //                DelimitedLineTokenizer delimitedLineTokenizer = new DelimitedLineTokenizer(","); //csv 파일에서 구분자
-//                delimitedLineTokenizer.setNames("invenLclsNo","invenMclsNo","invenSclsNo","invenLclsNm","invenMclsNm","invenSclsNm","invenCnt","invenPrice"); //행으로 읽은 데이터 매칭할 데이터 각 이름
+//                delimitedLineTokenizer.setNames("invenLClsNo","invenMClsNo","invenSClsNo","invenLClsNm","invenMClsNm","invenSClsNm","invenCnt","invenPrice"); //행으로 읽은 데이터 매칭할 데이터 각 이름
 //                defaultLineMapper.setLineTokenizer(delimitedLineTokenizer); //lineTokenizer 설정
 //
 //                /* beanWrapperFieldSetMapper: 매칭할 class 타입 지정 */
@@ -257,11 +271,37 @@ public class ItemManageJob {
 //                			+ "            ,INVEN_L_CLS_NM = :invenLClsNm			"
 //                			+ "            ,INVEN_M_CLS_NM = :invenMClsNm			"
 //                			+ "            ,INVEN_S_CLS_NM = :invenSClsNm			"
-//                			+ "            ,INVEN_CNT = :invenSClsNm				"
+//                			+ "            ,INVEN_CNT = :invenCnt				"
 //                			+ "            ,CRG_DATE = '" + date + "'				"
 //                			+ "             END_DATE = '99991231')					");
+//                	
+//                    // 조건에 따라 다른 테이블에 저장하는 writer 설정
+//                    JdbcBatchItemWriter<ItemListDto> writer = new JdbcBatchItemWriterBuilder<ItemListDto>()
+//                            .itemSqlParameterSourceProvider(new BeanPropertyItemSqlParameterSourceProvider<>())
+//                            .dataSource(dataSource)
+//                            .sql(sql) // SQL 쿼리 설정
+//                            .itemPreparedStatementSetter((itemToSet, ps) -> {
+//                                ps.setString(1, itemToSet.getInvenLClsNo());
+//                                ps.setString(2, itemToSet.getInvenMClsNo());
+//                                ps.setString(3, itemToSet.getInvenSClsNo()); 
+//                                ps.setString(4, itemToSet.getInvenLClsNm()); 
+//                                ps.setString(5, itemToSet.getInvenMClsNm()); 
+//                                ps.setString(6, itemToSet.getInvenSClsNm()); 
+//                                ps.setInt(7, itemToSet.getInvenCnt()); 
+//                                ps.setString(8, date); 
+//                                ps.setString(9, "99991231"); 
+//                                ps.setInt(10, itemToSet.getInvenCnt()); 
+//                                // 나머지 매개변수 설정
+//                            })
+//                            .build();
+//
+//                    List<ItemListDto> itemList = Collections.singletonList(item);
+//                    Chunk<ItemListDto> chunk = new Chunk<>(itemList);
+//                    writer.write(chunk);
+//                    
+//                    
 //                    // 조건에 따라 다른 테이블에 저장
-//                    if (item.getInvenLclsNo().startsWith("1")) { //상품
+//                    if (item.getInvenLClsNo().startsWith("1")) { //상품
 //                    	sql = ("   										"
 //                        		+ "		INSERT INTO GS_PRODUCT_INF 				"
 //                        		+ "            (								"
@@ -278,8 +318,8 @@ public class ItemManageJob {
 //                        		+ "   ON DUPLICATE KEY UPDATE					"
 //                        		+ "            PRODUCT_NM = :invenSClsNm		"
 //                        		+ "            ,PRODUCT_NO = :invenSClsNo		"
-//                        		+ "            ,PRODUCT_PRICE = :invenCnt;		"	);
-//                    } else if (item.getInvenLclsNo().startsWith("2")) {//씨앗
+//                        		+ "            ,PRODUCT_PRICE = :invenCnt		"	);
+//                    } else if (item.getInvenLClsNo().startsWith("2")) {//씨앗
 //                    	sql = ("   										"
 //                         		+ "		INSERT INTO GS_SEED_INF 				"
 //                         		+ "            (								"
@@ -296,8 +336,8 @@ public class ItemManageJob {
 //                         		+ "   ON DUPLICATE KEY UPDATE					"
 //                         		+ "            SEED_NM = :invenSClsNm		"
 //                         		+ "            ,SEED_NO = :invenSClsNo		"
-//                         		+ "            ,SEED_PRICE = :invenCnt;		"	);
-//                    } else if (item.getInvenLclsNo().startsWith("3")) {//약품
+//                         		+ "            ,SEED_PRICE = :invenCnt		"	);
+//                    } else if (item.getInvenLClsNo().startsWith("3")) {//약품
 //                    	sql = ("   										"
 //                         		+ "		INSERT INTO GS_CHEMISTRY_INF 				"
 //                         		+ "            (								"
@@ -314,16 +354,25 @@ public class ItemManageJob {
 //                         		+ "   ON DUPLICATE KEY UPDATE					"
 //                         		+ "            CHEMISTRY_NM = :invenSClsNm		"
 //                         		+ "            ,CHEMISTRY_NO = :invenSClsNo		"
-//                         		+ "            ,CHEMISTRY_PRICE = :invenCnt;		"	);
+//                         		+ "            ,CHEMISTRY_PRICE = :invenCnt		"	);
 //                    }
 //                 // 조건에 따라 다른 테이블에 저장하는 writer 설정
-//                    JdbcBatchItemWriter<ItemListDto> writer = new JdbcBatchItemWriterBuilder<ItemListDto>()
+//                   writer = new JdbcBatchItemWriterBuilder<ItemListDto>()
 //                            .itemSqlParameterSourceProvider(new BeanPropertyItemSqlParameterSourceProvider<>())
 //                            .dataSource(dataSource)
 //                            .sql(sql) // SQL 쿼리 설정
+//                            .itemPreparedStatementSetter((itemToSet, ps) -> {
+//                                ps.setString(1, itemToSet.getInvenSClsNo()); 
+//                                ps.setString(2, itemToSet.getInvenSClsNm()); 
+//                                ps.setString(3, itemToSet.getInvenPrice()); 
+//                                // 나머지 매개변수 설정
+//                            })
 //                            .build();
 //
-//                    writer.write((Chunk<? extends ItemListDto>) Collections.singletonList(item));
+//                    itemList = Collections.singletonList(item);
+//                    chunk = new Chunk<>(itemList);
+//                    writer.write(chunk);
+//
 //                }
 //
 //                flatFileItemReader.close();
