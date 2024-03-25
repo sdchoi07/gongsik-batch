@@ -1,5 +1,5 @@
 server: #서버포트설정
-     port: 7070
+     port: 8080 
 spring:
   datasource:
 #    batch:
@@ -10,7 +10,7 @@ spring:
 #        driver-class-name: com.mysql.cj.jdbc.Driver
 #        pool-name: 'read-and-write-pool'
     driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://localhost:3306/gsw?serverTimezone=Asia/Seoul&useSSL=false
+    url: jdbc:mysql://localhost:3306/gsw?serverTimezone=Asia/Seoul
     username: root
     password: gongsik1204   
   jpa:
@@ -22,3 +22,11 @@ spring:
      use_sql_comments: true  # sql 쿼리의 추가정보를 보여줍니다.
      format_sql: true  # sql query formatting
      dialect: org.hibernate.dialect.MySQL8Dialect
+  
+  
+  
+  
+  
+  
+  
+  
