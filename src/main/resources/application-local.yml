@@ -10,7 +10,7 @@ spring:
 #        driver-class-name: com.mysql.cj.jdbc.Driver
 #        pool-name: 'read-and-write-pool'
     driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://localhost:3306/gsw?serverTimezone=Asia/Seoul
+    url: jdbc:mysql://localhost:3306/gsw?serverTimezone=Asia/Seoul&useSSL=false
     username: root
     password: gongsik1204   
   jpa:
