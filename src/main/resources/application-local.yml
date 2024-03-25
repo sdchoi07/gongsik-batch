@@ -1,5 +1,5 @@
 server: #서버포트설정
-     port: 8080 
+     port: 7070 
 spring:
   datasource:
 #    batch:
